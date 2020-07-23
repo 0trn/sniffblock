@@ -1,0 +1,6 @@
+Thu Jul 23 22:51:43 2020 LOG: Configuration... done (0.014960050582885742)
+Thu Jul 23 22:51:43 2020 LOG: Starting app...  * Serving Flask app "main" (lazy loading)
+ * Environment: production
+   WARNING: This is a development server. Do not use it in a production deployment.
+   Use a production WSGI server instead.
+ * Debug mode: off

@@ -1,0 +1,154 @@
+<html>
+<head>
+	<title>sniffblock: {{ chatroom_name|e }}</title>
+	<meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="icon" type="image/png" href="/s/icon.png">
+   	<script>salt = "{{ usalt }}"</script>
+	<script src="/s/decryptor.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js" integrity="sha256-bQmrZe4yPnQrLTY+1gYylfNMBuGfnT/HKsCGX+9Xuqo=" crossorigin="anonymous"></script>
+	<style>
+		@font-face {
+			font-family: SFUI;
+			src: url("/s/SFUI.ttf");
+		}
+		body {
+			background: #333;
+		    font-family: SFUI;
+		    margin: 0;
+		}
+		textarea {
+			font-family: SFUI;
+			margin-bottom: 0; /* OLD */				
+		    /* height: -moz-calc(100% - 70px); */
+		    /* width: -moz-calc(100% - 20px); */
+		    background: #666;
+		    border: 1px solid #224;
+		    color: #baf;
+		    color: white;
+		    height: -webkit-calc(100% - 70px); /* OLD */
+		    height: calc(100% - 70px);
+		    margin-top: 10px;
+		    padding: 1px;
+		    resize: none;
+		    width: -webkit-calc(100% - 20px); /* OLD */
+		    width: calc(100% - 20px);
+		    /* FF FIX */
+		    display: inline;
+			margin-bottom: 23px;
+		}
+		input {
+		    /* width: -moz-calc(100% - 84px); */
+		    background: #666;
+		    color: white;
+		    font-weight: bolder;
+		    height: 30px;
+		    margin: 0;
+		    padding: 5px;
+		    width: -webkit-calc(100% - 84px);
+		    width: calc(100% - 84px);
+		}
+		input::placeholder {
+		    color: #aaf;
+		}
+		button {
+		    background: #666;
+		    color: white;
+		    height: 30px;
+		    margin: 0;
+		    padding: 0;
+		    width: 60px;
+		}
+		button, input {
+		    border: 1px solid #224;
+		}
+	</style>
+</head>
+	<body>
+		<center>
+			<textarea id="chat" readonly></textarea><br/>
+			<div height=30>
+				<input id="input" placeholder="Send an encrypted message to [{{ chatroom_name|e }}] chatroom"/>
+				<button onclick="sendMessage()">Send</button>
+			</div>
+		</center>
+		<script>
+			// inits
+			const chatroomName = "{{ chatroom_name }}";
+			const username = "{{ username }}";
+			var notifSound = new Audio('/s/notifs.wav');
+			notifSound.play(); // play audio when joining
+
+			var socket = io();
+
+			let input = document.getElementById("input");
+			let chat = document.getElementById("chat");
+
+			chat.onchange = function(event) {
+				chat.scrollTop = chat.scrollHeight;
+			}
+			
+			input.onkeypress = function(event) {
+				if (event.keyCode == 13) sendMessage();
+			}
+
+			let xhrSend = new XMLHttpRequest();
+			xhrSend.onreadystatechange = function() {
+			    if (this.readyState === XMLHttpRequest.DONE && this.status === 200) {
+			        chat.value += '\nSent message!';
+			    }
+			}
+
+			function sendMessage() {
+				if (input.value.length > 200) {
+					alert("Message too long! ")
+					return;
+				}
+				if (input.value != '') {
+			        chat.value += "\nObfuscating & sending message..."; // for slow internet
+			        let toSend = mencrypt(input.value, username, "server", "{{salt}}");
+			        input.value = "";
+			        socket.emit("postMessage", {"chatroom":chatroomName,"message":toSend})
+			    }
+			}
+
+			// join message
+			socket.emit("joinedChat", {"chatroom":chatroomName});
+
+	        // leave message (depr)
+            window.addEventListener('keydown', function (e) {
+		        input.focus()
+		    });
+
+			let xhrChat = new XMLHttpRequest();
+			xhrChat.onreadystatechange = function() {
+			    if (this.readyState === XMLHttpRequest.DONE && this.status === 200) {
+			        document.getElementById("chat").value = mdecrypt(
+			        	this.responseText,
+			        	"server",
+			        	chatroomName,
+			        	"{{salt}}"
+			        );
+			        chat.scrollTop = chat.scrollHeight;
+			    }
+			}
+
+			// when a new message is sent, fetch the data
+			socket.on(`newMessage_${chatroomName}`, getMsg=>{
+				xhrChat.open("GET", `/chat/getMessages:${chatroomName}`);
+				xhrChat.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+				xhrChat.send();
+				notifSound.play();
+			});
+
+			// clipboard formatter to keep ref safe 
+			chat.addEventListener('copy', (event) => {
+			  event.clipboardData.setData('text',
+			  	`----- START MESSAGE (${chatroomName}) -----\n`+
+			  	mencrypt(document.getSelection().toString(),"server","clipboard","{{salt}}")+
+			  	`\n----- END MESSAGE (${chatroomName}) -----`);
+			  event.preventDefault();
+			});
+		</script>
+	</body>
+</html>

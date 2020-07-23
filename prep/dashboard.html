@@ -1,0 +1,94 @@
+<html>
+<head>
+  <title>sniffblock</title>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js" integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="/s/dashboard.css">
+</head>
+<body style="	background: #444">
+  <nav style="background: #222" class="navbar navbar-expand-lg navbar-dark logo" width="100%">
+    <div class="container">
+    <a class="navbar-brand">
+		<img src="./s/logo.png" height="60" class="d-inline-block" alt="logo" >
+		</a>
+	  </div>
+    <ul class="nav">
+      <li class="nav-item dropdown text-light">
+        <a class="nav-link dropdown-toggle text-light" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          Logged as {{ username|e }}
+        </a>
+        <div class="blacker dropdown-menu" aria-labelledby="navbarDropdown">
+          <a class="blacker dropdown-item text-light" href="/logout">Logout</a>
+        </div >
+      </li>
+    </ul>
+  </nav>
+  <div class="paragraph jumbotron text-light rounded-0">
+    <div class="form-group">
+      <label for="name">Create chatroom</label>
+      <p class="text-light">Chatroom name:</p>
+      <input type="text" class="form-control" id="name" aria-describedby="nameHelp">
+      <small id="nameHelp" class="form-text text-muted">Your chatroom is private. People need your invitation to join.</small>
+    </div>
+    <button onclick="window.location.replace(`/chat/create/${document.getElementById('name').value}`)" type="submit" class="btn btn-dark border">Create chatroom</button>
+  </div>
+  <script>
+  // converted from verificators.py
+  allowedChars = "abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+  function isAllowed(text) {
+    for (i of text) {
+      if (allowedChars.indexOf(i)==-1)
+        return false
+    }
+    return true;
+  }
+
+  // real time verification of the input
+  verif = function() {
+    yValue = $("input")[0].value;
+    if (!isAllowed(yValue)) {
+      $("input")[0].style.color='red';
+      $("button")[0].innerHTML="Invalid chatroom name!";
+      $("button")[0].disabled = true;
+    } else {
+      $("input")[0].style.color='black';
+      $("button")[0].innerHTML="Create chatroom";
+      $("button")[0].disabled = false;
+    }
+  }
+
+  setInterval(verif,100) // bad practice but it works great so...
+  </script>
+  <div class="paragraph jumbotron text-light rounded-0">
+    <div class="chatroom-list">
+      <label>Chatrooms where you are invited:</label><br>
+      {% if invites %}
+        {%- for item in invites %}
+        <a class="lead text-light">{{ item.name }}: made by {{ item.created_by }}, contains {{ item.messages }} messages</a>
+        <button class="joinbutton btn-secondary btn-sm float-right" onclick="window.location.replace('/chat/{{ item.name }}')">Join [{{ item.name }}] chat</button><br><br>
+        {% endfor -%}
+      {% else %}
+        <a class="lead text-light">No invites yet!</a>
+      {% endif %}
+    </div>
+    <div class="chatroom-list">
+      <label>Chatrooms created by you:</label><br>
+      {% if creations %}
+        {%- for item in creations %}
+        <a class="lead text-light">{{ item.name }}: contains {{ item.messages }} messages</a>
+        <button class="joinbutton btn-secondary btn-sm float-right" onclick="window.location.replace('/chat/{{ item.name }}')">Join [{{ item.name }}] chat</button><br><br>
+        {% endfor -%}
+      {% else %}
+        <a class="lead text-light">No chatrooms created yet!</a>
+      {% endif %}
+    </div>
+  </div>
+    <div class="paragraph jumbotron text-light rounded-0">
+    <label>Options</label><br>
+    <button onclick="if(prompt('Type your username if you are sure').toLowerCase()=='{{ username }}')window.location.replace(`/destroy`)" type="submit" class="btn btn-danger border">Destroy all account data</button>
+  </div>
+</html>
