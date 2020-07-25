@@ -47,7 +47,7 @@ from os import mkdir
 becomes
 ```py
 def mkdir(directory):
-    parent_dir = "/home/trn/sbp/sniffecure/sniffecure"
+    parent_dir = "/home/user/sniffblock" # change this to your working dir
     path = os.path.join(parent_dir, directory) 
     os.makedirs(path)
 ```
